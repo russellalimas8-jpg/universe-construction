@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Contact | Universe Construction</title>
+<meta name="description" content="Get in touch with Universe Construction or request a quote for your next project.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Work+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+<!-- ============ HEADER ============ -->
+<header class="site-header" id="siteHeader">
+  <div class="container header-inner">
+    <a href="index.html" class="logo">
+      <img src="images/logo-icon.png" alt="Universe Construction logo" class="logo-mark-img">
+      <span class="logo-text">UNIVERSE<br><span>CONSTRUCTION</span></span>
+    </a>
+    <nav class="main-nav" id="mainNav">
+      <a href="index.html">Home</a>
+      <a href="services.html">Services</a>
+      <a href="projects.html">Projects</a>
+      <a href="about.html">About</a>
+      <a href="contact.html" class="active">Contact</a>
+    </nav>
+    <a href="contact.html#quote" class="btn btn-primary nav-cta">Request a Quote</a>
+    <button class="nav-toggle" id="navToggle" aria-label="Toggle menu" aria-expanded="false">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</header>
+
+<main>
+
+  <!-- ============ PAGE HERO ============ -->
+  <section class="page-hero">
+    <div class="blueprint-grid" aria-hidden="true"></div>
+    <div class="container">
+      <p class="eyebrow"><span class="eyebrow-line"></span>GET IN TOUCH</p>
+      <h1 class="page-title">Let's talk<br>about your site.</h1>
+      <p class="page-lead">Send us the details and we'll come back to you with next steps — usually within one business day.</p>
+    </div>
+  </section>
+
+  <!-- ============ CONTACT + FORM ============ -->
+  <section class="section contact-section" id="quote">
+    <div class="container contact-inner">
+
+      <!-- Contact details -->
+      <div class="contact-details">
+        <h2>Contact Details</h2>
+        <div class="contact-detail-item">
+          <span class="detail-label">PHONE</span>
+          <a href="tel:+27601015569">060 101 5569</a>
+        </div>
+        <div class="contact-detail-item">
+          <span class="detail-label">EMAIL</span>
+          <a href="mailto:russellalimas8@gmail.com">russellalimas8@gmail.com</a>
+        </div>
+        <div class="contact-detail-item">
+          <span class="detail-label">HOURS</span>
+          <span>Mon – Fri, 8:00 – 17:00</span>
+        </div>
+      </div>
+
+      <!-- Quote form -->
+      <div class="contact-form-wrap">
+        <h2>Request a Quote</h2>
+        <p class="form-lead">Tell us about the project — the more detail, the faster we can scope it.</p>
+
+        <form id="quoteForm" novalidate>
+
+          <input type="hidden" name="access_key" value="YOUR_ACCESS_KEY_HERE">
+          <input type="hidden" name="subject" value="New Quote Request — Universe Construction">
+          <input type="checkbox" name="botcheck" class="botcheck" style="display:none;" tabindex="-1" autocomplete="off">
+
+          <div class="form-row">
+            <div class="form-field">
+              <label for="fullName">Full Name <span class="req">*</span></label>
+              <input type="text" id="fullName" name="fullName" required>
+              <span class="field-error" id="err-fullName">Please enter your name</span>
+            </div>
+            <div class="form-field">
+              <label for="phone">Phone Number <span class="req">*</span></label>
+              <input type="tel" id="phone" name="phone" required>
+              <span class="field-error" id="err-phone">Please enter a phone number</span>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-field">
+              <label for="email">Email Address <span class="req">*</span></label>
+              <input type="email" id="email" name="email" required>
+              <span class="field-error" id="err-email">Please enter a valid email</span>
+            </div>
+            <div class="form-field">
+              <label for="projectType">Project Type <span class="req">*</span></label>
+              <select id="projectType" name="projectType" required>
+                <option value="" disabled selected>Select one</option>
+                <option value="residential">Residential</option>
+                <option value="commercial">Commercial</option>
+                <option value="civil">Civil / Groundworks</option>
+                <option value="renovation">Renovation</option>
+                <option value="other">Other</option>
+              </select>
+              <span class="field-error" id="err-projectType">Please select a project type</span>
+            </div>
+          </div>
+
+          <div class="form-field">
+            <label for="budget">Estimated Budget</label>
+            <select id="budget" name="budget">
+              <option value="" disabled selected>Select a range (optional)</option>
+              <option value="under-100k">Under R100,000</option>
+              <option value="100k-500k">R100,000 – R500,000</option>
+              <option value="500k-1m">R500,000 – R1,000,000</option>
+              <option value="over-1m">Over R1,000,000</option>
+              <option value="not-sure">Not sure yet</option>
+            </select>
+          </div>
+
+          <div class="form-field">
+            <label for="details">Project Details <span class="req">*</span></label>
+            <textarea id="details" name="details" rows="5" required placeholder="Tell us about the site, scope, timeline — anything that helps us understand the job."></textarea>
+            <span class="field-error" id="err-details">Please add a few details about the project</span>
+          </div>
+
+          <button type="submit" class="btn btn-primary btn-lg form-submit" id="submitBtn">Send Request</button>
+
+          <p class="form-success" id="formSuccess" hidden>Thanks — your request has been received. We'll be in touch within one business day.</p>
+          <p class="form-error" id="formError" hidden>Something went wrong sending your request. Please try again, or contact us directly by phone or email.</p>
+        </form>
+      </div>
+
+    </div>
+  </section>
+
+</main>
+
+<!-- ============ FOOTER ============ -->
+<footer class="site-footer">
+  <div class="container footer-inner">
+    <div class="footer-col">
+      <a href="index.html" class="logo">
+        <img src="images/logo-icon.png" alt="Universe Construction logo" class="logo-mark-img">
+        <span class="logo-text">UNIVERSE<br><span>CONSTRUCTION</span></span>
+      </a>
+      <p class="footer-tag">General &amp; civil contractors.</p>
+    </div>
+    <div class="footer-col">
+      <h5>Navigate</h5>
+      <a href="services.html">Services</a>
+      <a href="projects.html">Projects</a>
+      <a href="about.html">About</a>
+      <a href="contact.html">Contact</a>
+    </div>
+    <div class="footer-col">
+      <h5>Contact</h5>
+      <a href="tel:+27601015569">060 101 5569</a>
+      <a href="mailto:russellalimas8@gmail.com">russellalimas8@gmail.com</a>
+    </div>
+  </div>
+  <div class="container footer-bottom">
+    <span>© <span id="year"></span> Universe Construction. All rights reserved.</span>
+  </div>
+</footer>
+
+<script src="js/main.js"></script>
+</body>
+</html>
