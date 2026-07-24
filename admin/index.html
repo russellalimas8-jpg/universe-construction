@@ -3,21 +3,338 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Content Manager | Universe Construction</title>
-<script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
+<title>Manage Projects | Universe Construction</title>
+<style>
+  :root {
+    --charcoal: #1C1E1F;
+    --yellow: #F2B705;
+    --off-white: #F3F2EE;
+    --line: #DEDCD4;
+    --concrete: #8C8A85;
+  }
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, Segoe UI, Roboto, sans-serif;
+    background: var(--off-white);
+    color: var(--charcoal);
+    margin: 0;
+    padding: 24px;
+  }
+  .wrap { max-width: 820px; margin: 0 auto; }
+  h1 { font-size: 1.4rem; margin-bottom: 4px; }
+  .sub { color: var(--concrete); margin-bottom: 24px; font-size: 0.92rem; }
+  .card {
+    background: white;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    padding: 20px;
+    margin-bottom: 20px;
+  }
+  label { display: block; font-weight: 600; font-size: 0.85rem; margin-bottom: 6px; margin-top: 14px; }
+  label:first-child { margin-top: 0; }
+  input, select, textarea {
+    width: 100%;
+    padding: 10px 12px;
+    border: 2px solid var(--line);
+    border-radius: 4px;
+    font-size: 0.95rem;
+    font-family: inherit;
+  }
+  textarea { resize: vertical; min-height: 70px; }
+  button {
+    background: var(--yellow);
+    color: var(--charcoal);
+    border: 2px solid var(--yellow);
+    padding: 10px 20px;
+    border-radius: 4px;
+    font-weight: 700;
+    cursor: pointer;
+    font-size: 0.9rem;
+    margin-top: 16px;
+  }
+  button:hover { background: transparent; }
+  button.secondary { background: transparent; border-color: var(--charcoal); }
+  button.danger { background: transparent; border-color: #C0392B; color: #C0392B; margin-top: 8px; }
+  .project-item {
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    padding: 14px;
+    margin-bottom: 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+  }
+  .project-item img { width: 60px; height: 45px; object-fit: cover; border-radius: 3px; }
+  .project-item .placeholder { width: 60px; height: 45px; background: var(--charcoal); border-radius: 3px; }
+  .project-item-info { flex: 1; }
+  .project-item-info strong { display: block; font-size: 0.95rem; }
+  .project-item-info span { font-size: 0.8rem; color: var(--concrete); }
+  .status { padding: 12px; border-radius: 4px; margin-bottom: 16px; font-size: 0.9rem; }
+  .status.error { background: #FBEAE8; border: 1px solid #C0392B; }
+  .status.success { background: #FFF8E1; border: 1px solid var(--yellow); }
+  .hidden { display: none; }
+  #tokenScreen { max-width: 500px; margin: 60px auto; }
+</style>
 </head>
 <body>
+<div class="wrap">
+
+  <div id="tokenScreen">
+    <h1>Manage Projects</h1>
+    <p class="sub">Enter your GitHub access key to continue. You'll get this from GitHub — see the setup guide if you don't have one yet.</p>
+    <div class="card">
+      <label for="tokenInput">GitHub Access Token</label>
+      <input type="password" id="tokenInput" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx">
+      <button onclick="saveToken()">Continue</button>
+      <div id="tokenStatus"></div>
+    </div>
+  </div>
+
+  <div id="mainScreen" class="hidden">
+    <h1>Manage Projects</h1>
+    <p class="sub">Add, edit, or remove project photos and details. Changes go live in about a minute.</p>
+    <div id="statusMsg"></div>
+
+    <div class="card">
+      <h3 style="margin-top:0;">Current Projects</h3>
+      <div id="projectList">Loading...</div>
+    </div>
+
+    <div class="card">
+      <h3 style="margin-top:0;" id="formTitle">Add New Project</h3>
+      <input type="hidden" id="editIndex" value="-1">
+      <label for="titleInput">Project Title</label>
+      <input type="text" id="titleInput" placeholder="e.g. Ridgeview Family Home">
+
+      <label for="categoryInput">Category</label>
+      <select id="categoryInput">
+        <option value="residential">Residential</option>
+        <option value="commercial">Commercial</option>
+        <option value="civil">Civil</option>
+      </select>
+
+      <label for="metaInput">Label</label>
+      <input type="text" id="metaInput" placeholder="e.g. RESIDENTIAL — 2025">
+
+      <label for="descInput">Description</label>
+      <textarea id="descInput" placeholder="Short description of the project"></textarea>
+
+      <label for="imageInput">Photo</label>
+      <input type="file" id="imageInput" accept="image/*">
+      <div id="imagePreview"></div>
+
+      <button onclick="saveProject()" id="saveBtn">Add Project</button>
+      <button class="secondary" onclick="resetForm()">Cancel Edit</button>
+    </div>
+  </div>
+
+</div>
+
 <script>
-  if (window.netlifyIdentity) {
-    window.netlifyIdentity.on("init", user => {
-      if (!user) {
-        window.netlifyIdentity.on("login", () => {
-          document.location.href = "/admin/";
-        });
-      }
+  const OWNER = 'russellalimas8-jpg';
+  const REPO = 'universe-construction';
+  const FILE_PATH = 'content/projects.json';
+  const API_BASE = `https://api.github.com/repos/${OWNER}/${REPO}`;
+
+  let token = sessionStorage.getItem('gh_token') || '';
+  let projectsData = { projects: [] };
+  let fileSha = '';
+  let pendingImageBase64 = null;
+  let pendingImageName = null;
+
+  if (token) {
+    document.getElementById('tokenInput').value = token;
+    showMainScreen();
+  }
+
+  function saveToken() {
+    const val = document.getElementById('tokenInput').value.trim();
+    if (!val) return;
+    token = val;
+    sessionStorage.setItem('gh_token', token);
+    showMainScreen();
+  }
+
+  async function showMainScreen() {
+    document.getElementById('tokenScreen').classList.add('hidden');
+    document.getElementById('mainScreen').classList.remove('hidden');
+    await loadProjects();
+  }
+
+  function authHeaders() {
+    return {
+      'Authorization': `Bearer ${token}`,
+      'Accept': 'application/vnd.github+json'
+    };
+  }
+
+  async function loadProjects() {
+    try {
+      const res = await fetch(`${API_BASE}/contents/${FILE_PATH}`, { headers: authHeaders() });
+      if (!res.ok) throw new Error('Could not load projects (check your token)');
+      const data = await res.json();
+      fileSha = data.sha;
+      const decoded = decodeURIComponent(escape(atob(data.content)));
+      projectsData = JSON.parse(decoded);
+      renderProjectList();
+    } catch (err) {
+      showStatus('error', err.message);
+    }
+  }
+
+  function renderProjectList() {
+    const list = document.getElementById('projectList');
+    if (!projectsData.projects.length) {
+      list.innerHTML = '<p style="color:var(--concrete)">No projects yet.</p>';
+      return;
+    }
+    list.innerHTML = '';
+    projectsData.projects.forEach((p, i) => {
+      const div = document.createElement('div');
+      div.className = 'project-item';
+      const thumb = p.image
+        ? `<img src="${p.image}" alt="">`
+        : `<div class="placeholder"></div>`;
+      div.innerHTML = `
+        ${thumb}
+        <div class="project-item-info">
+          <strong>${p.title}</strong>
+          <span>${p.meta || p.category}</span>
+        </div>
+        <div>
+          <button class="secondary" onclick="editProject(${i})">Edit</button>
+          <button class="danger" onclick="deleteProject(${i})">Delete</button>
+        </div>
+      `;
+      list.appendChild(div);
     });
   }
+
+  function editProject(i) {
+    const p = projectsData.projects[i];
+    document.getElementById('editIndex').value = i;
+    document.getElementById('titleInput').value = p.title || '';
+    document.getElementById('categoryInput').value = p.category || 'residential';
+    document.getElementById('metaInput').value = p.meta || '';
+    document.getElementById('descInput').value = p.description || '';
+    document.getElementById('formTitle').textContent = 'Edit Project';
+    document.getElementById('saveBtn').textContent = 'Save Changes';
+    pendingImageBase64 = null;
+    window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+  }
+
+  function resetForm() {
+    document.getElementById('editIndex').value = -1;
+    document.getElementById('titleInput').value = '';
+    document.getElementById('categoryInput').value = 'residential';
+    document.getElementById('metaInput').value = '';
+    document.getElementById('descInput').value = '';
+    document.getElementById('imageInput').value = '';
+    document.getElementById('imagePreview').innerHTML = '';
+    document.getElementById('formTitle').textContent = 'Add New Project';
+    document.getElementById('saveBtn').textContent = 'Add Project';
+    pendingImageBase64 = null;
+    pendingImageName = null;
+  }
+
+  document.getElementById('imageInput').addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      pendingImageBase64 = reader.result.split(',')[1];
+      pendingImageName = Date.now() + '-' + file.name.replace(/[^a-zA-Z0-9.\-]/g, '');
+      document.getElementById('imagePreview').innerHTML = `<img src="${reader.result}" style="max-width:150px;margin-top:8px;border-radius:4px;">`;
+    };
+    reader.readAsDataURL(file);
+  });
+
+  async function uploadImage() {
+    if (!pendingImageBase64) return null;
+    const path = `images/uploads/${pendingImageName}`;
+    const res = await fetch(`${API_BASE}/contents/${path}`, {
+      method: 'PUT',
+      headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        message: `Upload project photo ${pendingImageName}`,
+        content: pendingImageBase64
+      })
+    });
+    if (!res.ok) throw new Error('Photo upload failed — check your token permissions');
+    return `/${path}`;
+  }
+
+  async function saveProject() {
+    const title = document.getElementById('titleInput').value.trim();
+    const category = document.getElementById('categoryInput').value;
+    const meta = document.getElementById('metaInput').value.trim();
+    const description = document.getElementById('descInput').value.trim();
+    const editIndex = parseInt(document.getElementById('editIndex').value, 10);
+
+    if (!title) { showStatus('error', 'Please enter a project title.'); return; }
+
+    document.getElementById('saveBtn').disabled = true;
+    document.getElementById('saveBtn').textContent = 'Saving...';
+
+    try {
+      let imagePath = editIndex >= 0 ? projectsData.projects[editIndex].image : '';
+      if (pendingImageBase64) {
+        imagePath = await uploadImage();
+      }
+
+      const newProject = { title, category, meta, description, image: imagePath || '' };
+
+      if (editIndex >= 0) {
+        projectsData.projects[editIndex] = newProject;
+      } else {
+        projectsData.projects.push(newProject);
+      }
+
+      await commitProjects(`Update project: ${title}`);
+      showStatus('success', 'Saved! Your live site will update within about a minute.');
+      resetForm();
+      renderProjectList();
+    } catch (err) {
+      showStatus('error', err.message);
+    } finally {
+      document.getElementById('saveBtn').disabled = false;
+      document.getElementById('saveBtn').textContent = editIndex >= 0 ? 'Save Changes' : 'Add Project';
+    }
+  }
+
+  async function deleteProject(i) {
+    if (!confirm(`Delete "${projectsData.projects[i].title}"? This can't be undone.`)) return;
+    projectsData.projects.splice(i, 1);
+    try {
+      await commitProjects('Delete project');
+      showStatus('success', 'Project deleted.');
+      renderProjectList();
+    } catch (err) {
+      showStatus('error', err.message);
+    }
+  }
+
+  async function commitProjects(message) {
+    const content = btoa(unescape(encodeURIComponent(JSON.stringify(projectsData, null, 2))));
+    const res = await fetch(`${API_BASE}/contents/${FILE_PATH}`, {
+      method: 'PUT',
+      headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message, content, sha: fileSha })
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.message || 'Could not save changes to GitHub');
+    }
+    const data = await res.json();
+    fileSha = data.content.sha;
+  }
+
+  function showStatus(type, msg) {
+    const el = document.getElementById('statusMsg');
+    el.innerHTML = `<div class="status ${type}">${msg}</div>`;
+    setTimeout(() => { el.innerHTML = ''; }, 6000);
+  }
 </script>
-<script src="https://unpkg.com/decap-cms@^3.0.0/dist/decap-cms.js"></script>
 </body>
 </html>
