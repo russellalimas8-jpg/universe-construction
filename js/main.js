@@ -22,8 +22,9 @@ if (navToggle && mainNav) {
 }
 
 // Scroll reveal for elements with .reveal
-const revealEls = document.querySelectorAll('.reveal');
-if (revealEls.length) {
+function revealOnScroll() {
+  const revealEls = document.querySelectorAll('.reveal:not(.in-view)');
+  if (!revealEls.length) return;
   const observer = new IntersectionObserver((entries) => {
     entries.forEach(entry => {
       if (entry.isIntersecting) {
@@ -35,17 +36,59 @@ if (revealEls.length) {
 
   revealEls.forEach(el => observer.observe(el));
 }
+revealOnScroll();
 
 // Footer year
 const yearEl = document.getElementById('year');
 if (yearEl) yearEl.textContent = new Date().getFullYear();
 
-// Gallery filtering (projects.html)
+// Gallery: load projects from content/projects.json, render cards, then filter (projects.html)
 const filterBar = document.getElementById('filterBar');
 const galleryGrid = document.getElementById('galleryGrid');
 const galleryEmpty = document.getElementById('galleryEmpty');
 
-if (filterBar && galleryGrid) {
+if (galleryGrid) {
+  fetch('content/projects.json')
+    .then(res => res.json())
+    .then(data => {
+      const projects = data.projects || [];
+      galleryGrid.innerHTML = '';
+
+      if (projects.length === 0) {
+        galleryGrid.innerHTML = '<p class="gallery-loading">No projects added yet.</p>';
+        return;
+      }
+
+      projects.forEach(project => {
+        const card = document.createElement('article');
+        card.className = 'gallery-card reveal';
+        card.dataset.category = project.category || 'residential';
+
+        const thumbHTML = project.image
+          ? `<div class="gallery-thumb"><img src="${project.image}" alt="${project.title}" loading="lazy"></div>`
+          : `<div class="gallery-thumb thumb-1"></div>`;
+
+        card.innerHTML = `
+          ${thumbHTML}
+          <div class="gallery-info">
+            <span class="project-meta meta-dark">${project.meta || ''}</span>
+            <h3>${project.title || ''}</h3>
+            <p>${project.description || ''}</p>
+          </div>
+        `;
+        galleryGrid.appendChild(card);
+      });
+
+      initGalleryFilter();
+      revealOnScroll();
+    })
+    .catch(() => {
+      galleryGrid.innerHTML = '<p class="gallery-loading">Could not load projects right now.</p>';
+    });
+}
+
+function initGalleryFilter() {
+  if (!filterBar || !galleryGrid) return;
   const filterBtns = filterBar.querySelectorAll('.filter-btn');
   const cards = galleryGrid.querySelectorAll('.gallery-card');
 
