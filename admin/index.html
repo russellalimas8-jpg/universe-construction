@@ -67,6 +67,16 @@
   }
   .project-item img { width: 60px; height: 45px; object-fit: cover; border-radius: 3px; }
   .project-item .placeholder { width: 60px; height: 45px; background: var(--charcoal); border-radius: 3px; }
+  .photo-thumb { position: relative; width: 90px; height: 68px; }
+  .photo-thumb img { width: 100%; height: 100%; object-fit: cover; border-radius: 4px; display: block; }
+  .photo-thumb .rm {
+    position: absolute; top: -6px; right: -6px;
+    width: 20px; height: 20px; border-radius: 50%;
+    background: #C0392B; color: white; border: none;
+    font-size: 12px; line-height: 1; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    padding: 0; margin: 0;
+  }
   .project-item-info { flex: 1; }
   .project-item-info strong { display: block; font-size: 0.95rem; }
   .project-item-info span { font-size: 0.8rem; color: var(--concrete); }
@@ -128,9 +138,9 @@
       <label for="descInput">Description</label>
       <textarea id="descInput" placeholder="Short description of the project"></textarea>
 
-      <label for="imageInput">Photo</label>
-      <input type="file" id="imageInput" accept="image/*">
-      <div id="imagePreview"></div>
+      <label for="imageInput">Photos (up to 5)</label>
+      <input type="file" id="imageInput" accept="image/*" multiple>
+      <div id="imagePreview" style="display:flex; flex-wrap:wrap; gap:8px; margin-top:8px;"></div>
 
       <button onclick="saveProject()" id="saveBtn">Add Project</button>
       <button class="secondary" onclick="resetForm()">Cancel Edit</button>
@@ -156,8 +166,9 @@
   let token = sessionStorage.getItem('gh_token') || '';
   let projectsData = { projects: [] };
   let fileSha = '';
-  let pendingImageBase64 = null;
-  let pendingImageName = null;
+  const MAX_PHOTOS = 5;
+  let existingImages = [];   // image paths already saved (when editing)
+  let pendingNewImages = []; // { base64, name } not yet uploaded
 
   if (token) {
     document.getElementById('tokenInput').value = token;
@@ -286,14 +297,16 @@
     projectsData.projects.forEach((p, i) => {
       const div = document.createElement('div');
       div.className = 'project-item';
-      const thumb = p.image
-        ? `<img src="${p.image}" alt="">`
+      const imgs = getProjectImages(p);
+      const thumb = imgs.length
+        ? `<img src="${imgs[0]}" alt="">`
         : `<div class="placeholder"></div>`;
+      const countBadge = imgs.length > 1 ? ` &middot; ${imgs.length} photos` : '';
       div.innerHTML = `
         ${thumb}
         <div class="project-item-info">
           <strong>${p.title}</strong>
-          <span>${p.meta || p.category}</span>
+          <span>${p.meta || p.category}${countBadge}</span>
         </div>
         <div>
           <button class="secondary" onclick="editProject(${i})">Edit</button>
@@ -302,6 +315,14 @@
       `;
       list.appendChild(div);
     });
+  }
+
+  // Returns an array of image paths for a project, supporting both the
+  // newer `images` array field and the older single `image` field.
+  function getProjectImages(p) {
+    if (Array.isArray(p.images)) return p.images.filter(Boolean);
+    if (p.image) return [p.image];
+    return [];
   }
 
   function editProject(i) {
@@ -313,7 +334,10 @@
     document.getElementById('descInput').value = p.description || '';
     document.getElementById('formTitle').textContent = 'Edit Project';
     document.getElementById('saveBtn').textContent = 'Save Changes';
-    pendingImageBase64 = null;
+    existingImages = getProjectImages(p);
+    pendingNewImages = [];
+    document.getElementById('imageInput').value = '';
+    renderImagePreview();
     window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
   }
 
@@ -324,38 +348,88 @@
     document.getElementById('metaInput').value = '';
     document.getElementById('descInput').value = '';
     document.getElementById('imageInput').value = '';
-    document.getElementById('imagePreview').innerHTML = '';
     document.getElementById('formTitle').textContent = 'Add New Project';
     document.getElementById('saveBtn').textContent = 'Add Project';
-    pendingImageBase64 = null;
-    pendingImageName = null;
+    existingImages = [];
+    pendingNewImages = [];
+    renderImagePreview();
   }
 
   document.getElementById('imageInput').addEventListener('change', (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () => {
-      pendingImageBase64 = reader.result.split(',')[1];
-      pendingImageName = Date.now() + '-' + file.name.replace(/[^a-zA-Z0-9.\-]/g, '');
-      document.getElementById('imagePreview').innerHTML = `<img src="${reader.result}" style="max-width:150px;margin-top:8px;border-radius:4px;">`;
-    };
-    reader.readAsDataURL(file);
+    const files = Array.from(e.target.files || []);
+    const spaceLeft = MAX_PHOTOS - (existingImages.length + pendingNewImages.length);
+    if (spaceLeft <= 0) {
+      showStatus('error', `You already have ${MAX_PHOTOS} photos on this project. Remove one first.`);
+      e.target.value = '';
+      return;
+    }
+    const toAdd = files.slice(0, spaceLeft);
+    if (files.length > toAdd.length) {
+      showStatus('error', `Only ${MAX_PHOTOS} photos allowed per project — added the first ${toAdd.length}.`);
+    }
+    let remaining = toAdd.length;
+    if (remaining === 0) { e.target.value = ''; return; }
+    toAdd.forEach(file => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        pendingNewImages.push({
+          base64: reader.result.split(',')[1],
+          name: Date.now() + '-' + Math.random().toString(36).slice(2, 7) + '-' + file.name.replace(/[^a-zA-Z0-9.\-]/g, ''),
+          dataUrl: reader.result
+        });
+        remaining--;
+        if (remaining === 0) {
+          renderImagePreview();
+          e.target.value = '';
+        }
+      };
+      reader.readAsDataURL(file);
+    });
   });
 
-  async function uploadImage() {
-    if (!pendingImageBase64) return null;
-    const path = `images/uploads/${pendingImageName}`;
-    const res = await fetch(`${API_BASE}/contents/${path}`, {
-      method: 'PUT',
-      headers: { ...authHeaders(), 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        message: `Upload project photo ${pendingImageName}`,
-        content: pendingImageBase64
-      })
+  function renderImagePreview() {
+    const wrap = document.getElementById('imagePreview');
+    wrap.innerHTML = '';
+    existingImages.forEach((path, idx) => {
+      const div = document.createElement('div');
+      div.className = 'photo-thumb';
+      div.innerHTML = `<img src="${path}" alt=""><button type="button" class="rm" onclick="removeExistingImage(${idx})">&times;</button>`;
+      wrap.appendChild(div);
     });
-    if (!res.ok) throw new Error('Photo upload failed — check your token permissions');
-    return `/${path}`;
+    pendingNewImages.forEach((img, idx) => {
+      const div = document.createElement('div');
+      div.className = 'photo-thumb';
+      div.innerHTML = `<img src="${img.dataUrl}" alt=""><button type="button" class="rm" onclick="removePendingImage(${idx})">&times;</button>`;
+      wrap.appendChild(div);
+    });
+  }
+
+  function removeExistingImage(idx) {
+    existingImages.splice(idx, 1);
+    renderImagePreview();
+  }
+
+  function removePendingImage(idx) {
+    pendingNewImages.splice(idx, 1);
+    renderImagePreview();
+  }
+
+  async function uploadPendingImages() {
+    const uploaded = [];
+    for (const img of pendingNewImages) {
+      const path = `images/uploads/${img.name}`;
+      const res = await fetch(`${API_BASE}/contents/${path}`, {
+        method: 'PUT',
+        headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message: `Upload project photo ${img.name}`,
+          content: img.base64
+        })
+      });
+      if (!res.ok) throw new Error('Photo upload failed — check your token permissions');
+      uploaded.push(`/${path}`);
+    }
+    return uploaded;
   }
 
   async function saveProject() {
@@ -371,12 +445,10 @@
     document.getElementById('saveBtn').textContent = 'Saving...';
 
     try {
-      let imagePath = editIndex >= 0 ? projectsData.projects[editIndex].image : '';
-      if (pendingImageBase64) {
-        imagePath = await uploadImage();
-      }
+      const newlyUploaded = await uploadPendingImages();
+      const finalImages = [...existingImages, ...newlyUploaded].slice(0, MAX_PHOTOS);
 
-      const newProject = { title, category, meta, description, image: imagePath || '' };
+      const newProject = { title, category, meta, description, images: finalImages };
 
       if (editIndex >= 0) {
         projectsData.projects[editIndex] = newProject;

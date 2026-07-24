@@ -59,17 +59,29 @@ if (galleryGrid) {
         return;
       }
 
-      projects.forEach(project => {
+      projects.forEach((project, pIndex) => {
         const card = document.createElement('article');
         card.className = 'gallery-card reveal';
         card.dataset.category = project.category || 'other';
 
-        const thumbHTML = project.image
-          ? `<div class="gallery-thumb"><img src="${project.image}" alt="${project.title}" loading="lazy"></div>`
+        const images = Array.isArray(project.images) && project.images.length
+          ? project.images.filter(Boolean)
+          : (project.image ? [project.image] : []);
+
+        const mainImgId = `gallery-main-${pIndex}`;
+        const thumbHTML = images.length
+          ? `<div class="gallery-thumb"><img id="${mainImgId}" src="${images[0]}" alt="${project.title}" loading="lazy"></div>`
           : `<div class="gallery-thumb thumb-1"></div>`;
+
+        const thumbStripHTML = images.length > 1
+          ? `<div class="gallery-thumb-strip">${images.map((src, i) =>
+              `<button type="button" class="gallery-thumb-mini${i === 0 ? ' active' : ''}" data-target="${mainImgId}" data-src="${src}"><img src="${src}" alt="" loading="lazy"></button>`
+            ).join('')}</div>`
+          : '';
 
         card.innerHTML = `
           ${thumbHTML}
+          ${thumbStripHTML}
           <div class="gallery-info">
             <span class="project-meta meta-dark">${project.meta || ''}</span>
             <h3>${project.title || ''}</h3>
@@ -77,6 +89,16 @@ if (galleryGrid) {
           </div>
         `;
         galleryGrid.appendChild(card);
+      });
+
+      // Wire up thumbnail strips to swap the main image
+      galleryGrid.querySelectorAll('.gallery-thumb-mini').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const mainImg = document.getElementById(btn.dataset.target);
+          if (mainImg) mainImg.src = btn.dataset.src;
+          btn.closest('.gallery-thumb-strip').querySelectorAll('.gallery-thumb-mini').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+        });
       });
 
       initGalleryFilter();
