@@ -42,6 +42,53 @@ revealOnScroll();
 const yearEl = document.getElementById('year');
 if (yearEl) yearEl.textContent = new Date().getFullYear();
 
+// Featured projects on homepage (index.html) — shows the 3 most recently added projects
+const featuredGrid = document.getElementById('featuredProjectsGrid');
+
+if (featuredGrid) {
+  fetch(`content/projects.json?v=${Date.now()}`, { cache: 'no-store' })
+    .then(res => res.json())
+    .then(data => {
+      const projects = data.projects || [];
+      featuredGrid.innerHTML = '';
+
+      if (projects.length === 0) {
+        featuredGrid.innerHTML = '<p class="gallery-loading">Projects coming soon.</p>';
+        return;
+      }
+
+      // Show the most recently added projects first (last added = most recent)
+      const featured = [...projects].reverse().slice(0, 3);
+
+      featured.forEach((project, i) => {
+        const images = Array.isArray(project.images) && project.images.length
+          ? project.images.filter(Boolean)
+          : (project.image ? [project.image] : []);
+
+        const card = document.createElement('article');
+        card.className = 'project-card reveal';
+
+        const thumbHTML = images.length
+          ? `<div class="project-thumb"><img src="${images[0]}" alt="${project.title || ''}" loading="lazy"></div>`
+          : `<div class="project-thumb thumb-${(i % 3) + 1}"></div>`;
+
+        card.innerHTML = `
+          ${thumbHTML}
+          <div class="project-info">
+            <span class="project-meta">${project.meta || ''}</span>
+            <h3>${project.title || ''}</h3>
+          </div>
+        `;
+        featuredGrid.appendChild(card);
+      });
+
+      revealOnScroll();
+    })
+    .catch(() => {
+      featuredGrid.innerHTML = '<p class="gallery-loading">Could not load projects right now.</p>';
+    });
+}
+
 // Gallery: load projects from content/projects.json, render cards, then filter (projects.html)
 const filterBar = document.getElementById('filterBar');
 const galleryGrid = document.getElementById('galleryGrid');
