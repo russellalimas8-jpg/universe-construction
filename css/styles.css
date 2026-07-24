@@ -416,6 +416,17 @@ p { color: var(--color-concrete); }
   grid-template-columns: 200px 1fr;
   gap: 48px;
 }
+.service-detail-inner.has-image {
+  grid-template-columns: 200px 1fr 320px;
+  align-items: center;
+}
+.service-detail-image img {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  border-radius: 4px;
+  display: block;
+}
 .service-detail-content h2 { margin-bottom: 18px; }
 .service-detail-lead { font-size: 1.05rem; max-width: 620px; margin-bottom: 32px; }
 .service-detail-list {
@@ -707,6 +718,8 @@ p { color: var(--color-concrete); }
   .footer-inner { grid-template-columns: 1fr; }
   .hero-specs { gap: 32px; }
   .service-detail-inner { grid-template-columns: 1fr; gap: 20px; }
+  .service-detail-inner.has-image { grid-template-columns: 1fr; }
+  .service-detail-image { order: -1; }
   .service-detail-list { grid-template-columns: 1fr; }
   .about-story-inner { grid-template-columns: 1fr; gap: 32px; }
   .values-grid { grid-template-columns: 1fr; }
