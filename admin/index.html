@@ -102,6 +102,12 @@
     </div>
 
     <div class="card">
+      <h3 style="margin-top:0;">Service Page Photos</h3>
+      <p class="sub" style="margin-bottom:12px;">These are the photos shown next to each service on your Services page. Click "Replace Photo" to swap any of them.</p>
+      <div id="servicePhotoList">Loading...</div>
+    </div>
+
+    <div class="card">
       <h3 style="margin-top:0;" id="formTitle">Add New Project</h3>
       <input type="hidden" id="editIndex" value="-1">
       <label for="titleInput">Project Title</label>
@@ -139,6 +145,14 @@
   const FILE_PATH = 'content/projects.json';
   const API_BASE = `https://api.github.com/repos/${OWNER}/${REPO}`;
 
+  const SERVICE_PHOTOS = [
+    { key: 'home-renovations', label: 'Home Renovations', path: 'images/services/home-renovations.jpeg' },
+    { key: 'handyman-repairs', label: 'Handyman & Repairs', path: 'images/services/handyman-repairs.jpeg' },
+    { key: 'painting', label: 'Painting', path: 'images/services/painting.jpeg' },
+    { key: 'roof-cleaning', label: 'Roof Cleaning & Maintenance', path: 'images/services/roof-cleaning.jpeg' }
+  ];
+  const servicePhotoSha = {};
+
   let token = sessionStorage.getItem('gh_token') || '';
   let projectsData = { projects: [] };
   let fileSha = '';
@@ -162,6 +176,7 @@
     document.getElementById('tokenScreen').classList.add('hidden');
     document.getElementById('mainScreen').classList.remove('hidden');
     await loadProjects();
+    await loadServicePhotos();
   }
 
   function authHeaders() {
@@ -169,6 +184,82 @@
       'Authorization': `Bearer ${token}`,
       'Accept': 'application/vnd.github+json'
     };
+  }
+
+  async function loadServicePhotos() {
+    const list = document.getElementById('servicePhotoList');
+    list.innerHTML = '';
+    for (const sp of SERVICE_PHOTOS) {
+      try {
+        const res = await fetch(`${API_BASE}/contents/${sp.path}`, { headers: authHeaders() });
+        if (res.ok) {
+          const data = await res.json();
+          servicePhotoSha[sp.key] = data.sha;
+        }
+      } catch (e) { /* ignore, will just show without sha */ }
+    }
+    renderServicePhotoList();
+  }
+
+  function renderServicePhotoList() {
+    const list = document.getElementById('servicePhotoList');
+    list.innerHTML = '';
+    SERVICE_PHOTOS.forEach((sp) => {
+      const div = document.createElement('div');
+      div.className = 'project-item';
+      const cacheBust = `?v=${Date.now()}`;
+      div.innerHTML = `
+        <img src="/${sp.path}${cacheBust}" alt="">
+        <div class="project-item-info">
+          <strong>${sp.label}</strong>
+          <span id="sp-status-${sp.key}"></span>
+        </div>
+        <div>
+          <input type="file" accept="image/*" id="sp-file-${sp.key}" style="display:none" onchange="replaceServicePhoto('${sp.key}')">
+          <button class="secondary" onclick="document.getElementById('sp-file-${sp.key}').click()">Replace Photo</button>
+        </div>
+      `;
+      list.appendChild(div);
+    });
+  }
+
+  async function replaceServicePhoto(key) {
+    const sp = SERVICE_PHOTOS.find(s => s.key === key);
+    const fileInput = document.getElementById(`sp-file-${key}`);
+    const file = fileInput.files[0];
+    if (!file) return;
+    const statusEl = document.getElementById(`sp-status-${key}`);
+    statusEl.textContent = 'Uploading...';
+
+    const reader = new FileReader();
+    reader.onload = async () => {
+      const base64 = reader.result.split(',')[1];
+      try {
+        const body = {
+          message: `Replace service photo: ${sp.label}`,
+          content: base64
+        };
+        if (servicePhotoSha[key]) body.sha = servicePhotoSha[key];
+        const res = await fetch(`${API_BASE}/contents/${sp.path}`, {
+          method: 'PUT',
+          headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+          body: JSON.stringify(body)
+        });
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          throw new Error(err.message || 'Upload failed — check your token permissions');
+        }
+        const data = await res.json();
+        servicePhotoSha[key] = data.content.sha;
+        statusEl.textContent = 'Updated — live in about a minute';
+        showStatus('success', `${sp.label} photo updated! Your live site will refresh within about a minute.`);
+        setTimeout(() => renderServicePhotoList(), 1200);
+      } catch (err) {
+        statusEl.textContent = '';
+        showStatus('error', err.message);
+      }
+    };
+    reader.readAsDataURL(file);
   }
 
   async function loadProjects() {
