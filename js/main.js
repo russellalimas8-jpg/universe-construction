@@ -48,7 +48,7 @@ const galleryGrid = document.getElementById('galleryGrid');
 const galleryEmpty = document.getElementById('galleryEmpty');
 
 if (galleryGrid) {
-  fetch('content/projects.json')
+  fetch(`content/projects.json?v=${Date.now()}`, { cache: 'no-store' })
     .then(res => res.json())
     .then(data => {
       const projects = data.projects || [];
