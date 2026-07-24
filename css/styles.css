@@ -569,6 +569,20 @@ p { color: var(--color-concrete); }
 .gallery-info h3 { font-size: 1.1rem; margin: 10px 0 8px; }
 .gallery-info p { font-size: 0.92rem; }
 .project-meta.meta-dark { color: var(--color-steel-blue); background: none; }
+.gallery-loading {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 60px 0;
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  color: var(--color-concrete);
+}
+.gallery-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
 .gallery-empty {
   text-align: center;
   padding: 40px 0;
