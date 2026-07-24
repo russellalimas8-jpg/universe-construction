@@ -62,7 +62,7 @@ if (galleryGrid) {
       projects.forEach(project => {
         const card = document.createElement('article');
         card.className = 'gallery-card reveal';
-        card.dataset.category = project.category || 'residential';
+        card.dataset.category = project.category || 'other';
 
         const thumbHTML = project.image
           ? `<div class="gallery-thumb"><img src="${project.image}" alt="${project.title}" loading="lazy"></div>`

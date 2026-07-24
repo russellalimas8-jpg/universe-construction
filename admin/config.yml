@@ -23,9 +23,11 @@ collections:
                 name: "category"
                 widget: "select"
                 options:
-                  - { label: "Residential", value: "residential" }
-                  - { label: "Commercial", value: "commercial" }
-                  - { label: "Civil", value: "civil" }
-              - { label: "Label (e.g. RESIDENTIAL — 2025)", name: "meta", widget: "string" }
+                  - { label: "Renovation", value: "renovation" }
+                  - { label: "Handyman / Repairs", value: "handyman" }
+                  - { label: "Painting", value: "painting" }
+                  - { label: "Roof Cleaning", value: "roofing" }
+                  - { label: "Other", value: "other" }
+              - { label: "Label (e.g. RENOVATION — 2026)", name: "meta", widget: "string" }
               - { label: "Description", name: "description", widget: "text" }
               - { label: "Photo", name: "image", widget: "image", required: false }

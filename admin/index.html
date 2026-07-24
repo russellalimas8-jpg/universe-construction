@@ -105,17 +105,19 @@
       <h3 style="margin-top:0;" id="formTitle">Add New Project</h3>
       <input type="hidden" id="editIndex" value="-1">
       <label for="titleInput">Project Title</label>
-      <input type="text" id="titleInput" placeholder="e.g. Ridgeview Family Home">
+      <input type="text" id="titleInput" placeholder="e.g. Smith Family Kitchen Reno">
 
       <label for="categoryInput">Category</label>
       <select id="categoryInput">
-        <option value="residential">Residential</option>
-        <option value="commercial">Commercial</option>
-        <option value="civil">Civil</option>
+        <option value="renovation">Renovation</option>
+        <option value="handyman">Handyman / Repairs</option>
+        <option value="painting">Painting</option>
+        <option value="roofing">Roof Cleaning</option>
+        <option value="other">Other</option>
       </select>
 
       <label for="metaInput">Label</label>
-      <input type="text" id="metaInput" placeholder="e.g. RESIDENTIAL — 2025">
+      <input type="text" id="metaInput" placeholder="e.g. RENOVATION — 2026">
 
       <label for="descInput">Description</label>
       <textarea id="descInput" placeholder="Short description of the project"></textarea>
@@ -215,7 +217,7 @@
     const p = projectsData.projects[i];
     document.getElementById('editIndex').value = i;
     document.getElementById('titleInput').value = p.title || '';
-    document.getElementById('categoryInput').value = p.category || 'residential';
+    document.getElementById('categoryInput').value = p.category || 'other';
     document.getElementById('metaInput').value = p.meta || '';
     document.getElementById('descInput').value = p.description || '';
     document.getElementById('formTitle').textContent = 'Edit Project';
@@ -227,7 +229,7 @@
   function resetForm() {
     document.getElementById('editIndex').value = -1;
     document.getElementById('titleInput').value = '';
-    document.getElementById('categoryInput').value = 'residential';
+    document.getElementById('categoryInput').value = 'renovation';
     document.getElementById('metaInput').value = '';
     document.getElementById('descInput').value = '';
     document.getElementById('imageInput').value = '';

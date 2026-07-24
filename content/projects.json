@@ -1,46 +1,11 @@
 {
   "projects": [
     {
-      "title": "lynn franks",
-      "category": "commercial",
-      "meta": "RESIDENTIAL — 2026",
+      "title": "Lynn Franks",
+      "category": "roofing",
+      "meta": "ROOF CLEANING — 2026",
       "description": "Roof pressure cleaning",
       "image": "/images/uploads/1784886264841-WhatsAppImage2026-07-23at10.19.48PM.jpeg"
-    },
-    {
-      "title": "Meridian Retail Fit-Out",
-      "category": "commercial",
-      "meta": "COMMERCIAL — 2025",
-      "description": "Full interior fit-out for a 600m² retail space, delivered in 9 weeks.",
-      "image": ""
-    },
-    {
-      "title": "Northside Access Road",
-      "category": "civil",
-      "meta": "CIVIL — 2024",
-      "description": "1.2km access road including drainage and stormwater management.",
-      "image": ""
-    },
-    {
-      "title": "Hillcrest Renovation & Extension",
-      "category": "residential",
-      "meta": "RESIDENTIAL — 2024",
-      "description": "Full kitchen remodel plus a second-storey addition.",
-      "image": ""
-    },
-    {
-      "title": "Parkside Office Build-Out",
-      "category": "commercial",
-      "meta": "COMMERCIAL — 2024",
-      "description": "Open-plan office fit-out for a 40-person team, including meeting pods.",
-      "image": ""
-    },
-    {
-      "title": "Eastgate Site Groundworks",
-      "category": "civil",
-      "meta": "CIVIL — 2023",
-      "description": "Site clearing, foundations and earthworks for a 12-unit development.",
-      "image": ""
     }
   ]
 }
